@@ -27,6 +27,12 @@ namespace Library.PL
                     case "2":
                         CreateBook();
                         break;
+                    case "3": 
+                        UpdateBookUI(); 
+                        break;
+                    case "4": 
+                        DeleteBookUI(); 
+                        break;
                     case "0":
                         Console.WriteLine("Đang thoát chương trình...");
                         return; 
@@ -47,6 +53,8 @@ namespace Library.PL
             Console.WriteLine("========================================");
             Console.WriteLine("1. Xem danh sách Sách");
             Console.WriteLine("2. Thêm Sách mới");
+            Console.WriteLine("3. Cập nhật sách");
+            Console.WriteLine("4. Xoá sách");
             Console.WriteLine("0. Thoát");
             Console.WriteLine("========================================");
         }
@@ -114,6 +122,85 @@ namespace Library.PL
                 Console.ResetColor();
             }
         }
+
+        static void UpdateBookUI()
+        {
+            Console.WriteLine("\n--- CẬP NHẬT THÔNG TIN SÁCH ---");
+            Console.Write("Nhập ID sách cần sửa: ");
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.WriteLine("ID phải là số!");
+                return;
+            }
+
+            Book? oldBook = _service.GetBookById(id);
+            if (oldBook == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Không tìm thấy sách có ID này!");
+                Console.ResetColor();
+                return;
+            }
+
+            Console.WriteLine($"Đang sửa sách: {oldBook.Title}");
+            Console.WriteLine("(Bấm Enter để giữ nguyên giá trị cũ)");
+
+            Console.Write($"Tên mới (Cũ: {oldBook.Title}): ");
+            string? newTitle = Console.ReadLine();
+            string finalTitle = string.IsNullOrWhiteSpace(newTitle) ? oldBook.Title : newTitle;
+
+            Console.Write($"Tác giả mới (Cũ: {oldBook.Author}): ");
+            string? newAuthor = Console.ReadLine();
+            string finalAuthor = string.IsNullOrWhiteSpace(newAuthor) ? oldBook.Author : newAuthor;
+
+            Console.Write($"Năm XB mới (Cũ: {oldBook.PublishYear}): ");
+            string? newYearStr = Console.ReadLine();
+            int finalYear = oldBook.PublishYear; 
+            if (!string.IsNullOrWhiteSpace(newYearStr))
+            {
+                if (int.TryParse(newYearStr, out int y)) finalYear = y;
+                else Console.WriteLine("Năm nhập sai, sẽ giữ nguyên năm cũ.");
+            }
+
+            Book bookToUpdate = new Book(id, finalTitle, finalAuthor, finalYear);
+
+            string result = _service.UpdateBook(bookToUpdate);
+            
+            if (result.Contains("Thành công")) Console.ForegroundColor = ConsoleColor.Green;
+            else Console.ForegroundColor = ConsoleColor.Red;
+            
+            Console.WriteLine(result);
+            Console.ResetColor();
+        }
+
+        static void DeleteBookUI()
+        {
+            Console.WriteLine("\n--- XÓA SÁCH ---");
+            Console.Write("Nhập ID sách cần xóa: ");
+            if (!int.TryParse(Console.ReadLine(), out int id)) return;
+
+            Book? book = _service.GetBookById(id);
+            if (book == null)
+            {
+                Console.WriteLine("Không tìm thấy sách!");
+                return;
+            }
+
+            // Hỏi xác nhận (Confirmation)
+            Console.WriteLine($"Bạn có chắc chắn muốn xóa cuốn: '{book.Title}'? (y/n)");
+            string? confirm = Console.ReadLine();
+
+            if (confirm?.ToLower() == "y")
+            {
+                string result = _service.DeleteBook(id);
+                Console.WriteLine(result);
+            }
+            else
+            {
+                Console.WriteLine("Đã hủy thao tác xóa.");
+            }
+        }
+
 
         static string FormatString(string input, int maxLength)
         {

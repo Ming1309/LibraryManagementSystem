@@ -18,6 +18,11 @@ namespace Library.BLL
             return _repo.GetAllBooks();
         }
 
+        public Book? GetBookById(int id)
+        {
+            return _repo.GetBookById(id);
+        }
+
         public string AddBook(Book book)
         {
             if (string.IsNullOrWhiteSpace(book.Title))
@@ -50,6 +55,32 @@ namespace Library.BLL
             {
                 return "Lỗi hệ thống: Không thể lưu vào file.";
             }
+        }
+
+        public string UpdateBook(Book book)
+        {
+            if (_repo.GetBookById(book.Id) == null)
+            {
+                return "Lỗi: Sách không tồn tại trên hệ thống.";
+            }
+
+            if (string.IsNullOrWhiteSpace(book.Title)) return "Lỗi: Tên sách không được để trống!";
+            if (book.Title.Length < 2) return "Lỗi: Tên sách quá ngắn!";
+            if (book.PublishYear > DateTime.Now.Year) return "Lỗi: Năm xuất bản không hợp lệ!";
+
+            bool result = _repo.UpdateBook(book);
+            return result ? "Thành công: Đã cập nhật thông tin sách." : "Lỗi: Không thể lưu xuống file.";
+        }
+
+        public string DeleteBook(int id)
+        {
+            if (_repo.GetBookById(id) == null)
+            {
+                return "Lỗi: Sách không tìm thấy để xóa.";
+            }
+            
+            bool result = _repo.DeleteBook(id);
+            return result ? "Thành công: Đã xóa sách khỏi hệ thống." : "Lỗi: Không thể xóa file.";
         }
     }
 }

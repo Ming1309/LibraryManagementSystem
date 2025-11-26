@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Library.DAL
 {
@@ -15,6 +16,7 @@ namespace Library.DAL
             {
                 if (!File.Exists(_filePath))
                 {
+                    File.WriteAllText(_filePath, "[]", Encoding.UTF8);
                     return new List<Book>();
                 }
 
@@ -54,6 +56,12 @@ namespace Library.DAL
             return LoadData();
         }
 
+        public Book? GetBookById(int id)
+        {
+            List<Book> books = LoadData();
+            return books.FirstOrDefault(b => b.Id == id);
+        }
+
         public bool AddBook(Book book)
         {
             try
@@ -77,12 +85,42 @@ namespace Library.DAL
 
         public bool UpdateBook(Book book)
         {
-            return true;
+            try
+            {
+                List<Book> books = LoadData();
+                int index = books.FindIndex(b => b.Id == book.Id);
+
+                if (index == -1) return false;
+
+                books[index] = book;
+                SaveData(books);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public bool DeleteBook(int bookId)
         {
-            return true;
+            try
+            {
+                List<Book> books = LoadData();
+                Book? bookToDelete = books.FirstOrDefault(b => b.Id == bookId);
+
+                if (bookToDelete == null) return false;
+
+                books.Remove(bookToDelete);
+                SaveData(books);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
