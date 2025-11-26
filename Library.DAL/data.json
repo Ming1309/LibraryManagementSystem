@@ -1,8 +1,8 @@
-[
+﻿[
   {
     "Id": 1,
-    "Title": "Lập trình C# căn bản",
-    "Author": "Nguyễn Văn A",
+    "Title": "L\u1EADp tr\u00ECnh C# c\u0103n b\u1EA3n",
+    "Author": "Nguy\u1EC5n V\u0103n A",
     "PublishYear": 2023
   },
   {
@@ -13,8 +13,14 @@
   },
   {
     "Id": 3,
-    "Title": "Nhà Giả Kim",
+    "Title": "Nh\u00E0 Gi\u1EA3 Kim",
     "Author": "Paulo Coelho",
     "PublishYear": 1988
+  },
+  {
+    "Id": 4,
+    "Title": "abcd",
+    "Author": "abc",
+    "PublishYear": 2005
   }
 ]
