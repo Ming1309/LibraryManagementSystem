@@ -17,7 +17,7 @@ namespace Library.PL
             {
                 ShowMenu();
                 Console.Write("Chọn chức năng: ");
-                string choice = Console.ReadLine();
+                string choice = Console.ReadLine() ?? "";
 
                 switch (choice)
                 {
@@ -32,6 +32,9 @@ namespace Library.PL
                         break;
                     case "4": 
                         DeleteBookUI(); 
+                        break;
+                    case "5":
+                        SearchBooksUI();
                         break;
                     case "0":
                         Console.WriteLine("Đang thoát chương trình...");
@@ -55,33 +58,16 @@ namespace Library.PL
             Console.WriteLine("2. Thêm Sách mới");
             Console.WriteLine("3. Cập nhật sách");
             Console.WriteLine("4. Xoá sách");
+            Console.WriteLine("5. Tìm kiếm Sách");
             Console.WriteLine("0. Thoát");
             Console.WriteLine("========================================");
         }
 
         static void ViewBooks()
         {
-            Console.WriteLine("\n--- DANH SÁCH SÁCH ---");
+            Console.WriteLine("\n--- DANH SÁCH TOÀN BỘ SÁCH ---");
             List<Book> books = _service.GetAllBooks();
-
-            if (books.Count == 0)
-            {
-                Console.WriteLine("Hiện chưa có cuốn sách nào.");
-            }
-            else
-            {
-                Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", "ID", "TÊN SÁCH", "TÁC GIẢ", "NĂM");
-                Console.WriteLine(new string('-', 75));
-
-                foreach (var b in books)
-                {
-                    Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", 
-                        b.Id, 
-                        FormatString(b.Title, 30), 
-                        FormatString(b.Author, 20), 
-                        b.PublishYear);
-                }
-            }
+            DisplayTable(books); 
         }
 
         static void CreateBook()
@@ -91,13 +77,13 @@ namespace Library.PL
             Book newBook = new Book();
 
             Console.Write("Nhập tên sách: ");
-            newBook.Title = Console.ReadLine();
+            newBook.Title = Console.ReadLine() ?? "";
 
             Console.Write("Nhập tác giả: ");
-            newBook.Author = Console.ReadLine();
+            newBook.Author = Console.ReadLine() ?? "";
 
             Console.Write("Nhập năm xuất bản: ");
-            string yearInput = Console.ReadLine();
+            string yearInput = Console.ReadLine() ?? "";
             if (int.TryParse(yearInput, out int year))
             {
                 newBook.PublishYear = year;
@@ -186,7 +172,6 @@ namespace Library.PL
                 return;
             }
 
-            // Hỏi xác nhận (Confirmation)
             Console.WriteLine($"Bạn có chắc chắn muốn xóa cuốn: '{book.Title}'? (y/n)");
             string? confirm = Console.ReadLine();
 
@@ -199,6 +184,42 @@ namespace Library.PL
             {
                 Console.WriteLine("Đã hủy thao tác xóa.");
             }
+        }
+
+        static void DisplayTable(List<Book> listData)
+        {
+            if (listData.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Danh sách trống!");
+                Console.ResetColor();
+                return;
+            }
+
+            Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", "ID", "TÊN SÁCH", "TÁC GIẢ", "NĂM");
+            Console.WriteLine(new string('-', 75));
+
+            foreach (var b in listData)
+            {
+                Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", 
+                    b.Id, 
+                    FormatString(b.Title, 30), 
+                    FormatString(b.Author, 20), 
+                    b.PublishYear);
+            }
+        }
+
+        static void SearchBooksUI()
+        {
+            Console.WriteLine("\n--- TÌM KIẾM SÁCH ---");
+            Console.Write("Nhập từ khóa (Tên hoặc Tác giả): ");
+            string keyword = Console.ReadLine() ?? "";
+
+            List<Book> results = _service.SearchBooks(keyword);
+
+            Console.WriteLine($"\nĐã tìm thấy {results.Count} kết quả cho từ khóa '{keyword}':");
+            
+            DisplayTable(results); 
         }
 
 

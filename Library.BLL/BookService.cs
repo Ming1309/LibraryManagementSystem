@@ -82,5 +82,29 @@ namespace Library.BLL
             bool result = _repo.DeleteBook(id);
             return result ? "Thành công: Đã xóa sách khỏi hệ thống." : "Lỗi: Không thể xóa file.";
         }
+
+        public List<Book> SearchBooks(string keyword)
+        {
+            List<Book> allBooks = GetAllBooks();
+
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return new List<Book>();
+            }
+
+            keyword = keyword.ToLower();
+
+            List<Book> results = new List<Book>();
+            foreach (var b in allBooks)
+            {
+                if (b.Title.ToLower().Contains(keyword) || 
+                    b.Author.ToLower().Contains(keyword))
+                {
+                    results.Add(b);
+                }
+            }
+
+            return results;
+        }
     }
 }
