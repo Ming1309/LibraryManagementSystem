@@ -1,110 +1,149 @@
 using Library.Core;
-using Library.DAL;
+using Library.Core.Common;
+using Library.Core.Constants;
+using Library.Core.Interfaces;
 
 namespace Library.BLL
 {
     public class BookService
     {
-        private BookRepository _repo;
+        private readonly IRepository<Book> _repo;
 
-        public BookService()
+        /// <summary>
+        /// Constructor with Dependency Injection
+        /// </summary>
+        /// <param name="repository">Repository for data access</param>
+        public BookService(IRepository<Book> repository)
         {
-            _repo = new BookRepository();
+            _repo = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
 
         public List<Book> GetAllBooks()
         {
-            return _repo.GetAllBooks();
+            return _repo.GetAll();
         }
 
         public Book? GetBookById(int id)
         {
-            return _repo.GetBookById(id);
+            return _repo.GetById(id);
         }
 
-        public string AddBook(Book book)
+        public Result AddBook(Book book)
         {
             if (string.IsNullOrWhiteSpace(book.Title))
             {
-                return "Lỗi: Tên sách không được để trống!";
+                return Result.Failure(Messages.ErrorTitleEmpty, ErrorCodes.TitleEmpty);
             }
 
-            if (book.Title.Length < 2)
+            if (book.Title.Length < AppSettings.MinTitleLength)
             {
-                return "Lỗi: Tên sách phải có ít nhất 2 ký tự!";
+                return Result.Failure(Messages.ErrorTitleTooShort, ErrorCodes.TitleTooShort);
             }
 
             int currentYear = DateTime.Now.Year;
-            if (book.PublishYear <= 0)
+            if (book.PublishYear <= AppSettings.MinYearValue)
             {
-                return "Lỗi: Năm xuất bản phải lớn hơn 0!";
+                return Result.Failure(Messages.ErrorYearInvalid, ErrorCodes.YearInvalid);
             }
             if (book.PublishYear > currentYear)
             {
-                return $"Lỗi: Năm xuất bản không được lớn hơn năm hiện tại ({currentYear})!";
+                return Result.Failure(
+                    string.Format(Messages.ErrorYearFuture, currentYear), 
+                    ErrorCodes.YearFuture
+                );
             }
 
-            bool isSuccess = _repo.AddBook(book);
+            bool isSuccess = _repo.Add(book);
 
             if (isSuccess)
             {
-                return "Thành công: Đã thêm sách vào hệ thống.";
+                return Result.Success(Messages.SuccessAddBook);
             }
             else
             {
-                return "Lỗi hệ thống: Không thể lưu vào file.";
+                return Result.Failure(Messages.ErrorSaveFile, ErrorCodes.SaveError);
             }
         }
 
-        public string UpdateBook(Book book)
+        public Result UpdateBook(Book book)
         {
-            if (_repo.GetBookById(book.Id) == null)
+            if (_repo.GetById(book.Id) == null)
             {
-                return "Lỗi: Sách không tồn tại trên hệ thống.";
+                return Result.Failure(Messages.ErrorBookNotExist, ErrorCodes.BookNotExist);
             }
 
-            if (string.IsNullOrWhiteSpace(book.Title)) return "Lỗi: Tên sách không được để trống!";
-            if (book.Title.Length < 2) return "Lỗi: Tên sách quá ngắn!";
-            if (book.PublishYear > DateTime.Now.Year) return "Lỗi: Năm xuất bản không hợp lệ!";
+            if (string.IsNullOrWhiteSpace(book.Title))
+                return Result.Failure(Messages.ErrorTitleEmpty, ErrorCodes.TitleEmpty);
+            
+            if (book.Title.Length < AppSettings.MinTitleLength)
+                return Result.Failure(Messages.ErrorTitleTooShortUpdate, ErrorCodes.TitleTooShort);
+            
+            if (book.PublishYear > DateTime.Now.Year)
+                return Result.Failure(Messages.ErrorYearInvalidUpdate, ErrorCodes.YearInvalid);
 
-            bool result = _repo.UpdateBook(book);
-            return result ? "Thành công: Đã cập nhật thông tin sách." : "Lỗi: Không thể lưu xuống file.";
+            bool result = _repo.Update(book);
+            
+            return result 
+                ? Result.Success(Messages.SuccessUpdateBook) 
+                : Result.Failure(Messages.ErrorSaveFile, ErrorCodes.SaveError);
         }
 
-        public string DeleteBook(int id)
+        public Result DeleteBook(int id)
         {
-            if (_repo.GetBookById(id) == null)
+            if (_repo.GetById(id) == null)
             {
-                return "Lỗi: Sách không tìm thấy để xóa.";
+                return Result.Failure(Messages.ErrorBookNotFound, ErrorCodes.NotFound);
             }
             
-            bool result = _repo.DeleteBook(id);
-            return result ? "Thành công: Đã xóa sách khỏi hệ thống." : "Lỗi: Không thể xóa file.";
+            bool result = _repo.Delete(id);
+            
+            return result 
+                ? Result.Success(Messages.SuccessDeleteBook) 
+                : Result.Failure(Messages.ErrorDeleteFile, ErrorCodes.DeleteError);
         }
 
         public List<Book> SearchBooks(string keyword)
         {
-            List<Book> allBooks = GetAllBooks();
-
             if (string.IsNullOrWhiteSpace(keyword))
             {
                 return new List<Book>();
             }
 
-            keyword = keyword.ToLower();
+            keyword = keyword.Trim();
+            string searchTerm = keyword.ToLower();
 
-            List<Book> results = new List<Book>();
-            foreach (var b in allBooks)
+            // Hybrid search: Support syntax "author:..." or "title:..."
+            
+            // Search by Author only: "author:Tô Hoài"
+            if (searchTerm.StartsWith("author:"))
             {
-                if (b.Title.ToLower().Contains(keyword) || 
-                    b.Author.ToLower().Contains(keyword))
-                {
-                    results.Add(b);
-                }
+                string authorKeyword = searchTerm.Substring(7).Trim();
+                if (string.IsNullOrWhiteSpace(authorKeyword))
+                    return new List<Book>();
+                    
+                return _repo.Find(book => 
+                    book.Author.ToLower().Contains(authorKeyword)
+                );
             }
 
-            return results;
+            // Search by Title only: "title:Dế Mèn"
+            if (searchTerm.StartsWith("title:"))
+            {
+                string titleKeyword = searchTerm.Substring(6).Trim();
+                if (string.IsNullOrWhiteSpace(titleKeyword))
+                    return new List<Book>();
+                    
+                return _repo.Find(book => 
+                    book.Title.ToLower().Contains(titleKeyword)
+                );
+            }
+
+            // Default: Search both Title and Author
+            return _repo.Find(book => 
+                book.Title.ToLower().Contains(searchTerm) || 
+                book.Author.ToLower().Contains(searchTerm)
+            );
         }
     }
 }

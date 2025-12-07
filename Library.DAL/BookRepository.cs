@@ -1,4 +1,6 @@
 using Library.Core;
+using Library.Core.Interfaces;
+using Library.Core.Constants;
 using System.IO;
 using System.Text.Json;
 using System.Text;
@@ -7,9 +9,22 @@ using System.Linq;
 
 namespace Library.DAL
 {
-    public class BookRepository
+    public class BookRepository : IRepository<Book>
     {
-        private readonly string _filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data.json");
+        private readonly string _filePath;
+
+        /// <summary>
+        /// Constructor with Dependency Injection
+        /// </summary>
+        /// <param name="pathProvider">Path provider for resolving data file location</param>
+        public BookRepository(IPathProvider pathProvider)
+        {
+            if (pathProvider == null)
+                throw new ArgumentNullException(nameof(pathProvider));
+
+            _filePath = pathProvider.GetDataPath(AppSettings.DataFileName);
+        }
+
         private List<Book> LoadData()
         {
             try
@@ -32,7 +47,7 @@ namespace Library.DAL
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi đọc file dữ liệu: {ex.Message}");
+                throw new Exception(string.Format(Messages.ErrorReadFile, ex.Message));
             }
         }
 
@@ -48,9 +63,50 @@ namespace Library.DAL
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi ghi file dữ liệu: {ex.Message}");
+                throw new Exception(string.Format(Messages.ErrorWriteFile, ex.Message));
             }
         }
+
+        // Implement IRepository<Book> interface
+        public List<Book> GetAll()
+        {
+            return GetAllBooks();
+        }
+
+        public Book? GetById(int id)
+        {
+            return GetBookById(id);
+        }
+
+        public bool Add(Book entity)
+        {
+            return AddBook(entity);
+        }
+
+        public bool Update(Book entity)
+        {
+            return UpdateBook(entity);
+        }
+
+        public bool Delete(int id)
+        {
+            return DeleteBook(id);
+        }
+
+        public List<Book> Find(Func<Book, bool> predicate)
+        {
+            try
+            {
+                List<Book> books = LoadData();
+                return books.Where(predicate).ToList();
+            }
+            catch
+            {
+                return new List<Book>();
+            }
+        }
+
+        // Original methods (kept for backward compatibility)
         public List<Book> GetAllBooks()
         { 
             return LoadData();

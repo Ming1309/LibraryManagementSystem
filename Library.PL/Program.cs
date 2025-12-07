@@ -1,13 +1,22 @@
 ﻿using System;
 using Library.BLL;
 using Library.Core;
+using Library.Core.Common;
+using Library.Core.Constants;
+using Library.Core.Interfaces;
+using Library.PL.Infrastructure;
+using Library.DAL;
 using System.Text;
 
 namespace Library.PL
 {
     class Program
     {
-        static BookService _service = new BookService();
+        // Dependency Injection: Create dependencies first
+        private static readonly IPathProvider _pathProvider = new ConsolePathProvider();
+        private static readonly IRepository<Book> _repository = new BookRepository(_pathProvider);
+        private static readonly BookService _service = new BookService(_repository);
+
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -16,7 +25,7 @@ namespace Library.PL
             while (true)
             {
                 ShowMenu();
-                Console.Write("Chọn chức năng: ");
+                Console.Write("Select function: ");
                 string choice = Console.ReadLine() ?? "";
 
                 switch (choice)
@@ -37,52 +46,52 @@ namespace Library.PL
                         SearchBooksUI();
                         break;
                     case "0":
-                        Console.WriteLine("Đang thoát chương trình...");
+                        Console.WriteLine("Exiting program...");
                         return; 
                     default:
-                        Console.WriteLine("Chức năng không hợp lệ. Vui lòng chọn lại!");
+                        Console.WriteLine("Invalid function. Please select again!");
                         break;
                 }
 
-                Console.WriteLine("\nẤn phím bất kỳ để quay lại Menu...");
+                Console.WriteLine("\nPress any key to return to Menu...");
                 Console.ReadKey();
             }
         }
         static void ShowMenu()
         {
-            Console.Clear(); // Xóa màn hình cho sạch
+            Console.Clear();
             Console.WriteLine("========================================");
-            Console.WriteLine("    HỆ THỐNG QUẢN LÝ THƯ VIỆN (V1.0)    ");
+            Console.WriteLine("   LIBRARY MANAGEMENT SYSTEM (V1.0)    ");
             Console.WriteLine("========================================");
-            Console.WriteLine("1. Xem danh sách Sách");
-            Console.WriteLine("2. Thêm Sách mới");
-            Console.WriteLine("3. Cập nhật sách");
-            Console.WriteLine("4. Xoá sách");
-            Console.WriteLine("5. Tìm kiếm Sách");
-            Console.WriteLine("0. Thoát");
+            Console.WriteLine("1. View Book List");
+            Console.WriteLine("2. Add New Book");
+            Console.WriteLine("3. Update Book");
+            Console.WriteLine("4. Delete Book");
+            Console.WriteLine("5. Search Books");
+            Console.WriteLine("0. Exit");
             Console.WriteLine("========================================");
         }
 
         static void ViewBooks()
         {
-            Console.WriteLine("\n--- DANH SÁCH TOÀN BỘ SÁCH ---");
+            Console.WriteLine("\n--- ALL BOOKS LIST ---");
             List<Book> books = _service.GetAllBooks();
             DisplayTable(books); 
         }
 
         static void CreateBook()
         {
-            Console.WriteLine("\n--- THÊM SÁCH MỚI ---");
+            Console.WriteLine("\n--- ADD NEW BOOK ---");
             
             Book newBook = new Book();
 
-            Console.Write("Nhập tên sách: ");
+            Console.Write("Enter book title: ");
             newBook.Title = Console.ReadLine() ?? "";
 
-            Console.Write("Nhập tác giả: ");
+            Console.Write("Enter author: ");
             newBook.Author = Console.ReadLine() ?? "";
 
-            Console.Write("Nhập năm xuất bản: ");
+            Console.Write("Enter publish year: ");
             string yearInput = Console.ReadLine() ?? "";
             if (int.TryParse(yearInput, out int year))
             {
@@ -93,29 +102,29 @@ namespace Library.PL
                 newBook.PublishYear = -1;
             }
 
-            string result = _service.AddBook(newBook);
+            Result result = _service.AddBook(newBook);
 
-            if (result.StartsWith("Thành công"))
+            if (result.IsSuccess)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(result);
+                Console.WriteLine(result.Message);
                 Console.ResetColor();
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(result);
+                Console.WriteLine(result.Message);
                 Console.ResetColor();
             }
         }
 
         static void UpdateBookUI()
         {
-            Console.WriteLine("\n--- CẬP NHẬT THÔNG TIN SÁCH ---");
-            Console.Write("Nhập ID sách cần sửa: ");
+            Console.WriteLine("\n--- UPDATE BOOK INFORMATION ---");
+            Console.Write("Enter book ID to edit: ");
             if (!int.TryParse(Console.ReadLine(), out int id))
             {
-                Console.WriteLine("ID phải là số!");
+                Console.WriteLine("ID must be a number!");
                 return;
             }
 
@@ -123,103 +132,115 @@ namespace Library.PL
             if (oldBook == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Không tìm thấy sách có ID này!");
+                Console.WriteLine("Book with this ID not found!");
                 Console.ResetColor();
                 return;
             }
 
-            Console.WriteLine($"Đang sửa sách: {oldBook.Title}");
-            Console.WriteLine("(Bấm Enter để giữ nguyên giá trị cũ)");
+            Console.WriteLine($"Editing book: {oldBook.Title}");
+            Console.WriteLine("(Press Enter to keep old value)");
 
-            Console.Write($"Tên mới (Cũ: {oldBook.Title}): ");
+            Console.Write($"New title (Old: {oldBook.Title}): ");
             string? newTitle = Console.ReadLine();
             string finalTitle = string.IsNullOrWhiteSpace(newTitle) ? oldBook.Title : newTitle;
 
-            Console.Write($"Tác giả mới (Cũ: {oldBook.Author}): ");
+            Console.Write($"New author (Old: {oldBook.Author}): ");
             string? newAuthor = Console.ReadLine();
             string finalAuthor = string.IsNullOrWhiteSpace(newAuthor) ? oldBook.Author : newAuthor;
 
-            Console.Write($"Năm XB mới (Cũ: {oldBook.PublishYear}): ");
+            Console.Write($"New publish year (Old: {oldBook.PublishYear}): ");
             string? newYearStr = Console.ReadLine();
             int finalYear = oldBook.PublishYear; 
             if (!string.IsNullOrWhiteSpace(newYearStr))
             {
                 if (int.TryParse(newYearStr, out int y)) finalYear = y;
-                else Console.WriteLine("Năm nhập sai, sẽ giữ nguyên năm cũ.");
+                else Console.WriteLine("Invalid year input, will keep old year.");
             }
 
             Book bookToUpdate = new Book(id, finalTitle, finalAuthor, finalYear);
 
-            string result = _service.UpdateBook(bookToUpdate);
+            Result result = _service.UpdateBook(bookToUpdate);
             
-            if (result.Contains("Thành công")) Console.ForegroundColor = ConsoleColor.Green;
-            else Console.ForegroundColor = ConsoleColor.Red;
+            if (result.IsSuccess)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.Red;
             
-            Console.WriteLine(result);
+            Console.WriteLine(result.Message);
             Console.ResetColor();
         }
 
         static void DeleteBookUI()
         {
-            Console.WriteLine("\n--- XÓA SÁCH ---");
-            Console.Write("Nhập ID sách cần xóa: ");
+            Console.WriteLine("\n--- DELETE BOOK ---");
+            Console.Write("Enter book ID to delete: ");
             if (!int.TryParse(Console.ReadLine(), out int id)) return;
 
             Book? book = _service.GetBookById(id);
             if (book == null)
             {
-                Console.WriteLine("Không tìm thấy sách!");
+                Console.WriteLine("Book not found!");
                 return;
             }
 
-            Console.WriteLine($"Bạn có chắc chắn muốn xóa cuốn: '{book.Title}'? (y/n)");
+            Console.WriteLine($"Are you sure you want to delete: '{book.Title}'? (y/n)");
             string? confirm = Console.ReadLine();
 
             if (confirm?.ToLower() == "y")
             {
-                string result = _service.DeleteBook(id);
-                Console.WriteLine(result);
+                Result result = _service.DeleteBook(id);
+                
+                if (result.IsSuccess)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                else
+                    Console.ForegroundColor = ConsoleColor.Red;
+                
+                Console.WriteLine(result.Message);
+                Console.ResetColor();
             }
             else
             {
-                Console.WriteLine("Đã hủy thao tác xóa.");
+                Console.WriteLine("Delete operation cancelled.");
             }
         }
 
-        static void DisplayTable(List<Book> listData)
+        static void DisplayTable(List<Book> listData, string emptyMessage = "List is empty!")
         {
             if (listData.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Danh sách trống!");
+                Console.WriteLine(emptyMessage);
                 Console.ResetColor();
                 return;
             }
 
-            Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", "ID", "TÊN SÁCH", "TÁC GIẢ", "NĂM");
+            Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", "ID", "TITLE", "AUTHOR", "YEAR");
             Console.WriteLine(new string('-', 75));
 
             foreach (var b in listData)
             {
                 Console.WriteLine("{0,-5} | {1,-30} | {2,-20} | {3,-10}", 
                     b.Id, 
-                    FormatString(b.Title, 30), 
-                    FormatString(b.Author, 20), 
+                    FormatString(b.Title, AppSettings.MaxTitleDisplayLength), 
+                    FormatString(b.Author, AppSettings.MaxAuthorDisplayLength), 
                     b.PublishYear);
             }
         }
 
         static void SearchBooksUI()
         {
-            Console.WriteLine("\n--- TÌM KIẾM SÁCH ---");
-            Console.Write("Nhập từ khóa (Tên hoặc Tác giả): ");
+            Console.WriteLine("\n--- SEARCH BOOKS ---");
+            Console.WriteLine("Tip: Use 'author:keyword' to search by author only");
+            Console.WriteLine("     Use 'title:keyword' to search by title only");
+            Console.WriteLine("     Or just enter keyword to search both");
+            Console.Write("\nEnter search term: ");
             string keyword = Console.ReadLine() ?? "";
 
             List<Book> results = _service.SearchBooks(keyword);
 
-            Console.WriteLine($"\nĐã tìm thấy {results.Count} kết quả cho từ khóa '{keyword}':");
+            Console.WriteLine($"\nFound {results.Count} result(s) for '{keyword}':");
             
-            DisplayTable(results); 
+            DisplayTable(results, "No books found matching your search."); 
         }
 
 
