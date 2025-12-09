@@ -12,10 +12,22 @@ namespace Library.PL
 {
     class Program
     {
-        // Dependency Injection: Create dependencies first
-        private static readonly IPathProvider _pathProvider = new ConsolePathProvider();
-        private static readonly IRepository<Book> _repository = new BookRepository(_pathProvider);
-        private static readonly BookService _service = new BookService(_repository);
+        // Dependency Injection: Only keep Service reference
+        private static readonly BookService _service;
+
+        /// <summary>
+        /// Static constructor - Composition Root
+        /// Initialize and wire up all dependencies here
+        /// </summary>
+        static Program()
+        {
+            // Create dependencies (local variables, not fields)
+            IPathProvider pathProvider = new ConsolePathProvider();
+            IRepository<Book> repository = new BookRepository(pathProvider);
+            
+            // Only store the Service layer reference
+            _service = new BookService(repository);
+        }
 
         static void Main(string[] args)
         {
@@ -46,10 +58,10 @@ namespace Library.PL
                         SearchBooksUI();
                         break;
                     case "0":
-                        Console.WriteLine("Exiting program...");
+                        Console.WriteLine(Messages.ExitProgram);
                         return; 
                     default:
-                        Console.WriteLine("Invalid function. Please select again!");
+                        Console.WriteLine(Messages.InvalidFunction);
                         break;
                 }
 
@@ -93,14 +105,14 @@ namespace Library.PL
 
             Console.Write("Enter publish year: ");
             string yearInput = Console.ReadLine() ?? "";
-            if (int.TryParse(yearInput, out int year))
+            if (!int.TryParse(yearInput, out int year))
             {
-                newBook.PublishYear = year;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(Messages.ErrorYearMustBeNumber);
+                Console.ResetColor();
+                return;
             }
-            else
-            {
-                newBook.PublishYear = -1;
-            }
+            newBook.PublishYear = year;
 
             Result result = _service.AddBook(newBook);
 
@@ -124,7 +136,9 @@ namespace Library.PL
             Console.Write("Enter book ID to edit: ");
             if (!int.TryParse(Console.ReadLine(), out int id))
             {
-                Console.WriteLine("ID must be a number!");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(Messages.ErrorIdMustBeNumber);
+                Console.ResetColor();
                 return;
             }
 
@@ -132,7 +146,7 @@ namespace Library.PL
             if (oldBook == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Book with this ID not found!");
+                Console.WriteLine(Messages.ErrorBookNotFound);
                 Console.ResetColor();
                 return;
             }
@@ -153,8 +167,17 @@ namespace Library.PL
             int finalYear = oldBook.PublishYear; 
             if (!string.IsNullOrWhiteSpace(newYearStr))
             {
-                if (int.TryParse(newYearStr, out int y)) finalYear = y;
-                else Console.WriteLine("Invalid year input, will keep old year.");
+                if (int.TryParse(newYearStr, out int y))
+                {
+                    finalYear = y;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(Messages.ErrorInvalidYearInput);
+                    Console.ResetColor();
+                    return;
+                }
             }
 
             Book bookToUpdate = new Book(id, finalTitle, finalAuthor, finalYear);
@@ -174,12 +197,20 @@ namespace Library.PL
         {
             Console.WriteLine("\n--- DELETE BOOK ---");
             Console.Write("Enter book ID to delete: ");
-            if (!int.TryParse(Console.ReadLine(), out int id)) return;
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(Messages.ErrorIdMustBeNumber);
+                Console.ResetColor();
+                return;
+            }
 
             Book? book = _service.GetBookById(id);
             if (book == null)
             {
-                Console.WriteLine("Book not found!");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(Messages.ErrorBookNotFound);
+                Console.ResetColor();
                 return;
             }
 
@@ -200,16 +231,18 @@ namespace Library.PL
             }
             else
             {
-                Console.WriteLine("Delete operation cancelled.");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(Messages.DeleteCancelled);
+                Console.ResetColor();
             }
         }
 
-        static void DisplayTable(List<Book> listData, string emptyMessage = "List is empty!")
+        static void DisplayTable(List<Book> listData, string emptyMessage = null!)
         {
             if (listData.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(emptyMessage);
+                Console.WriteLine(emptyMessage ?? Messages.ListEmpty);
                 Console.ResetColor();
                 return;
             }
@@ -240,7 +273,7 @@ namespace Library.PL
 
             Console.WriteLine($"\nFound {results.Count} result(s) for '{keyword}':");
             
-            DisplayTable(results, "No books found matching your search."); 
+            DisplayTable(results, Messages.SearchNoResults); 
         }
 
 

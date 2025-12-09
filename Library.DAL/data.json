@@ -1,20 +1,32 @@
 ﻿[
   {
+    "Id": 1,
+    "Title": "D\u1EBF M\u00E8n Phi\u00EAu L\u01B0u K\u00FD",
+    "Author": "T\u00F4 Ho\u00E0i",
+    "PublishYear": 1941
+  },
+  {
     "Id": 2,
-    "Title": "\u00E0dfsa",
-    "Author": "s\u1EA7",
-    "PublishYear": 1
+    "Title": "Clean Code",
+    "Author": "Robert C. Martin",
+    "PublishYear": 2008
   },
   {
     "Id": 3,
-    "Title": "gsdgsd",
-    "Author": "sdgsg",
-    "PublishYear": 1
+    "Title": "M\u1EAFt Bi\u1EBFc",
+    "Author": "Nguy\u1EC5n Nh\u1EADt \u00C1nh",
+    "PublishYear": 1990
   },
   {
     "Id": 4,
-    "Title": "Minh",
-    "Author": "Pham",
-    "PublishYear": 2023
+    "Title": "The Pragmatic Programmer",
+    "Author": "Andrew Hunt",
+    "PublishYear": 1999
+  },
+  {
+    "Id": 5,
+    "Title": "Sapiens: A Brief History of Humankind",
+    "Author": "Yuval Noah Harari",
+    "PublishYear": 2011
   }
 ]

@@ -13,10 +13,6 @@ namespace Library.DAL
     {
         private readonly string _filePath;
 
-        /// <summary>
-        /// Constructor with Dependency Injection
-        /// </summary>
-        /// <param name="pathProvider">Path provider for resolving data file location</param>
         public BookRepository(IPathProvider pathProvider)
         {
             if (pathProvider == null)

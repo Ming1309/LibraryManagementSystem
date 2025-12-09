@@ -1,8 +1,6 @@
 namespace Library.Core.Common
 {
-    /// <summary>
-    /// Represents the result of an operation
-    /// </summary>
+    // Represents the result of an operation
     public class Result
     {
         public bool IsSuccess { get; }
@@ -16,22 +14,16 @@ namespace Library.Core.Common
             ErrorCode = errorCode;
         }
 
-        /// <summary>
-        /// Create a successful result
-        /// </summary>
+        // Create a successful result
         public static Result Success(string message)
             => new Result(true, message);
 
-        /// <summary>
-        /// Create a failed result
-        /// </summary>
+        // Create a failed result
         public static Result Failure(string message, string errorCode)
             => new Result(false, message, errorCode);
     }
 
-    /// <summary>
-    /// Represents the result of an operation with data
-    /// </summary>
+    // Represents the result of an operation with data
     public class Result<T>
     {
         public bool IsSuccess { get; }
@@ -47,15 +39,12 @@ namespace Library.Core.Common
             ErrorCode = errorCode;
         }
 
-        /// <summary>
-        /// Create a successful result with data
-        /// </summary>
+        // Create a successful result with data
+
         public static Result<T> Success(T data, string message)
             => new Result<T>(true, data, message);
 
-        /// <summary>
-        /// Create a failed result
-        /// </summary>
+        // Create a failed result
         public static Result<T> Failure(string message, string errorCode)
             => new Result<T>(false, default, message, errorCode);
     }

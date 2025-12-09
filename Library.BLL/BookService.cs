@@ -68,11 +68,6 @@ namespace Library.BLL
 
         public Result UpdateBook(Book book)
         {
-            if (_repo.GetById(book.Id) == null)
-            {
-                return Result.Failure(Messages.ErrorBookNotExist, ErrorCodes.BookNotExist);
-            }
-
             if (string.IsNullOrWhiteSpace(book.Title))
                 return Result.Failure(Messages.ErrorTitleEmpty, ErrorCodes.TitleEmpty);
             
@@ -86,16 +81,11 @@ namespace Library.BLL
             
             return result 
                 ? Result.Success(Messages.SuccessUpdateBook) 
-                : Result.Failure(Messages.ErrorSaveFile, ErrorCodes.SaveError);
+                : Result.Failure(Messages.ErrorBookNotExist, ErrorCodes.BookNotExist);
         }
 
         public Result DeleteBook(int id)
         {
-            if (_repo.GetById(id) == null)
-            {
-                return Result.Failure(Messages.ErrorBookNotFound, ErrorCodes.NotFound);
-            }
-            
             bool result = _repo.Delete(id);
             
             return result 
@@ -113,9 +103,7 @@ namespace Library.BLL
             keyword = keyword.Trim();
             string searchTerm = keyword.ToLower();
 
-            // Hybrid search: Support syntax "author:..." or "title:..."
-            
-            // Search by Author only: "author:Tô Hoài"
+            // Search by Author only: 
             if (searchTerm.StartsWith("author:"))
             {
                 string authorKeyword = searchTerm.Substring(7).Trim();
@@ -127,7 +115,7 @@ namespace Library.BLL
                 );
             }
 
-            // Search by Title only: "title:Dế Mèn"
+            // Search by Title only:
             if (searchTerm.StartsWith("title:"))
             {
                 string titleKeyword = searchTerm.Substring(6).Trim();
